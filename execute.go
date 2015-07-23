@@ -6,7 +6,7 @@ import (
  "os/exec"
 )
 
-func Timeout(duration int64, name string, arg ...string) error {
+func Timeout(duration time.Duration, name string, arg ...string) error {
 	
 	cmd := exec.Command(name, arg...)
 	err := cmd.Start()
