@@ -1,4 +1,4 @@
-go execute
+package execute
 
 import (
  "time"
