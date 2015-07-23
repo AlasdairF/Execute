@@ -8,7 +8,7 @@ import (
 
 func Timeout(duration int64, name string, arg ...string) error {
 	
-	cmd := exec.Command(name, ...arg)
+	cmd := exec.Command(name, arg...)
 	err := cmd.Start()
 	if err != nil {
 		return err
