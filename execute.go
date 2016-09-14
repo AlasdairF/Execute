@@ -49,7 +49,7 @@ func Command(duration time.Duration, name string, arg ...string) *cmd {
 }
 
 func (c *cmd) Run() error {
-	return Timeout(c.duration, c.name, c.arg)
+	return Timeout(c.duration, c.name, c.arg...)
 }
 
 func (c *cmd) CombinedOutput() ([]byte, error) {
@@ -70,7 +70,7 @@ func (c *cmd) CombinedOutput() ([]byte, error) {
 	b := custom.NewBuffer(0)
 	defer b.Close()
 	
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
