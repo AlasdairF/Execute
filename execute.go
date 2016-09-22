@@ -125,8 +125,7 @@ func (c *cmd) Output() ([]byte, error) {
 	}
 	defer stdout.Close()
 	
-	b := custom.NewBuffer(0)
-	defer b.Close()
+	b := newBuffer()
 	
 	err = cmd.Start()
 	if err != nil {
@@ -152,6 +151,6 @@ func (c *cmd) Output() ([]byte, error) {
 			}
 	}
 	
-	return b.BytesCopy(), nil
+	return b.data, nil
 	
 }
