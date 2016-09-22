@@ -4,8 +4,8 @@ import (
  "time"
  "errors"
  "os/exec"
- "github.com/AlasdairF/Custom"
  "io"
+ "sync"
 )
 
 var ErrTimeout = errors.New(`Timeout`)
@@ -52,6 +52,23 @@ func (c *cmd) Run() error {
 	return Timeout(c.duration, c.name, c.arg...)
 }
 
+type buffer struct {
+	data []byte
+	mutex sync.Mutex
+}
+
+// Write a slice of bytes to the buffer. Implements io.Writer interface
+func (w *buffer) Write(p []byte) (int, error) {
+	w.mutex.Lock()
+	w.data = append(w.data, p...)
+	w.mutex.Unlock()
+	return len(p), nil
+}
+
+func newBuffer() *buffer {
+	return &buffer{data: make([]byte, 0, 512)}
+}
+
 func (c *cmd) CombinedOutput() ([]byte, error) {
 	
 	cmd := exec.Command(c.name, c.arg...)
@@ -67,8 +84,7 @@ func (c *cmd) CombinedOutput() ([]byte, error) {
 	}
 	defer stderr.Close()
 	
-	b := custom.NewBuffer(0)
-	defer b.Close()
+	b := newBuffer()
 	
 	err = cmd.Start()
 	if err != nil {
@@ -95,7 +111,7 @@ func (c *cmd) CombinedOutput() ([]byte, error) {
 			}
 	}
 	
-	return b.BytesCopy(), nil
+	return b.data, nil
 	
 }
 
