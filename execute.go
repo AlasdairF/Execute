@@ -1,47 +1,48 @@
 package execute
 
 import (
- "time"
- "errors"
- "os/exec"
- "io"
- "sync"
+	"errors"
+	"io"
+	"os/exec"
+	"sync"
+	"time"
 )
 
 var ErrTimeout = errors.New(`Timeout`)
 
 type cmd struct {
 	duration time.Duration
-	name string
-	arg []string
+	name     string
+	arg      []string
 }
 
 func Timeout(duration time.Duration, name string, arg ...string) error {
-	
+
 	cmd := exec.Command(name, arg...)
 	err := cmd.Start()
 	if err != nil {
 		return err
 	}
-	
+
 	done := make(chan error, 1)
 	go func() {
 		done <- cmd.Wait()
 	}()
 	select {
-		case <- time.After(duration):
-			if err = cmd.Process.Kill(); err != nil {
-				return err
-			}
-			<- done // allow goroutine to exit
-			return ErrTimeout
-		case err = <- done:
-			if err != nil {
-				return err
-			}
+	case <-time.After(duration):
+		if err = cmd.Process.Kill(); err != nil {
+			<-done // allow goroutine to exit
+			return err
+		}
+		<-done // allow goroutine to exit
+		return ErrTimeout
+	case err = <-done:
+		if err != nil {
+			return err
+		}
 	}
 	return nil
-	
+
 }
 
 func Command(duration time.Duration, name string, arg ...string) *cmd {
@@ -53,7 +54,7 @@ func (c *cmd) Run() error {
 }
 
 type buffer struct {
-	data []byte
+	data  []byte
 	mutex sync.Mutex
 }
 
@@ -70,9 +71,9 @@ func newBuffer() *buffer {
 }
 
 func (c *cmd) CombinedOutput() ([]byte, error) {
-	
+
 	cmd := exec.Command(c.name, c.arg...)
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -83,74 +84,74 @@ func (c *cmd) CombinedOutput() ([]byte, error) {
 		return nil, err
 	}
 	defer stderr.Close()
-	
+
 	b := newBuffer()
-	
+
 	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	go io.Copy(b, stdout)
-    go io.Copy(b, stderr)
-	
+	go io.Copy(b, stderr)
+
 	done := make(chan error, 1)
 	go func() {
 		done <- cmd.Wait()
 	}()
 	select {
-		case <- time.After(c.duration):
-			if err = cmd.Process.Kill(); err != nil {
-				return nil, err
-			}
-			<- done // allow goroutine to exit
-			return nil, ErrTimeout
-		case err = <- done:
-			if err != nil {
-				return nil, err
-			}
+	case <-time.After(c.duration):
+		if err = cmd.Process.Kill(); err != nil {
+			return nil, err
+		}
+		<-done // allow goroutine to exit
+		return nil, ErrTimeout
+	case err = <-done:
+		if err != nil {
+			return nil, err
+		}
 	}
-	
+
 	return b.data, nil
-	
+
 }
 
 func (c *cmd) Output() ([]byte, error) {
-	
+
 	cmd := exec.Command(c.name, c.arg...)
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
 	}
 	defer stdout.Close()
-	
+
 	b := newBuffer()
-	
+
 	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	go io.Copy(b, stdout)
-	
+
 	done := make(chan error, 1)
 	go func() {
 		done <- cmd.Wait()
 	}()
 	select {
-		case <- time.After(c.duration):
-			if err = cmd.Process.Kill(); err != nil {
-				return nil, err
-			}
-			<- done // allow goroutine to exit
-			return nil, ErrTimeout
-		case err = <- done:
-			if err != nil {
-				return nil, err
-			}
+	case <-time.After(c.duration):
+		if err = cmd.Process.Kill(); err != nil {
+			return nil, err
+		}
+		<-done // allow goroutine to exit
+		return nil, ErrTimeout
+	case err = <-done:
+		if err != nil {
+			return nil, err
+		}
 	}
-	
+
 	return b.data, nil
-	
+
 }
