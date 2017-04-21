@@ -102,6 +102,7 @@ func (c *cmd) CombinedOutput() ([]byte, error) {
 	select {
 	case <-time.After(c.duration):
 		if err = cmd.Process.Kill(); err != nil {
+			<-done // allow goroutine to exit
 			return nil, err
 		}
 		<-done // allow goroutine to exit
@@ -142,6 +143,7 @@ func (c *cmd) Output() ([]byte, error) {
 	select {
 	case <-time.After(c.duration):
 		if err = cmd.Process.Kill(); err != nil {
+			<-done // allow goroutine to exit
 			return nil, err
 		}
 		<-done // allow goroutine to exit
